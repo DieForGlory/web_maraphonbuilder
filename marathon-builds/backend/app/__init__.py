@@ -1,11 +1,10 @@
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 import os
 
-# Инициализация объектов расширений вне create_app для доступа из других модулей
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 
@@ -13,17 +12,22 @@ bcrypt = Bcrypt()
 def create_app():
     app = Flask(__name__)
 
-    # Конфигурация базы данных и безопасности
+    # Базовая конфигурация
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(app.instance_path, 'marathon.db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['JWT_SECRET_KEY'] = 'super-secret-terminal-key'  # Смените в продакшене
+    app.config['JWT_SECRET_KEY'] = 'super-secret-terminal-key'
 
-    # Настройка путей для медиа-контента
+    # Настройки JWT для работы через API (без cookies/CSRF)
+    app.config['JWT_TOKEN_LOCATION'] = ['headers']
+    app.config['JWT_HEADER_NAME'] = 'Authorization'
+    app.config['JWT_HEADER_TYPE'] = 'Bearer'
+    app.config['JWT_COOKIE_CSRF_PROTECT'] = False
+
+    # Пути для медиа-контента
     app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/uploads/highlights')
     app.config['THUMBNAIL_FOLDER'] = os.path.join(app.root_path, 'static/uploads/thumbnails')
-    app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # Лимит загрузки 50MB
+    app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 
-    # Гарантируем наличие папок на диске
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     os.makedirs(app.config['THUMBNAIL_FOLDER'], exist_ok=True)
     try:
@@ -31,15 +35,36 @@ def create_app():
     except OSError:
         pass
 
-    # Инициализация расширений
     db.init_app(app)
     bcrypt.init_app(app)
-    JWTManager(app)
+    jwt = JWTManager(app)
 
-    # Настройка CORS для работы через туннели VS Code
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    # Расширенная настройка CORS для туннелей
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": "*",
+            "allow_headers": ["Content-Type", "Authorization"],
+            "methods": ["GET", "POST", "OPTIONS"]
+        }
+    })
 
-    # Эндпоинты для раздачи статических файлов (Видео и Превью)
+    # Диагностика JWT (вывод в консоль сервера)
+    @jwt.unauthorized_loader
+    def custom_unauthorized_response(_err):
+        print(f"[JWT DEBUG] Unauthorized: {_err}")
+        return jsonify({"msg": _err}), 401
+
+    @jwt.invalid_token_loader
+    def custom_invalid_token_response(_err):
+        print(f"[JWT DEBUG] Invalid Token: {_err}")
+        return jsonify({"msg": _err}), 422
+
+    @jwt.expired_token_loader
+    def custom_expired_token_response(jwt_header, jwt_payload):
+        print(f"[JWT DEBUG] Expired Token")
+        return jsonify({"msg": "Token has expired"}), 401
+
+    # Раздача статики
     @app.route('/uploads/highlights/<filename>')
     def uploaded_file(filename):
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
@@ -48,7 +73,7 @@ def create_app():
     def uploaded_thumbnail(filename):
         return send_from_directory(app.config['THUMBNAIL_FOLDER'], filename)
 
-    # Регистрация Blueprints
+    # Blueprints
     from .routes.auth import auth_bp
     from .routes.game_data import game_data_bp
     from .routes.builds import builds_bp
