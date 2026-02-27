@@ -19,7 +19,8 @@ def create_build():
         shell_id=data.get('shell_id'),
         is_private=data.get('is_private', False)
     )
-    new_build.weapon_ids = data.get('weapon_ids', [])
+    # Ожидается массив объектов вместо массива строк
+    new_build.weapons_config = data.get('weapons_config', [])
     new_build.implant_ids = data.get('implant_ids', [])
 
     db.session.add(new_build)
@@ -46,7 +47,6 @@ def get_build(build_id):
     build = Build.query.get_or_404(build_id)
 
     if build.is_private:
-        # Требуется извлечение JWT без обязательной блокировки для проверки авторства (опущено для MVP)
         pass
 
     build.views += 1
@@ -57,7 +57,7 @@ def get_build(build_id):
         "name": build.name,
         "description": build.description,
         "shell_id": build.shell_id,
-        "weapon_ids": build.weapon_ids,
+        "weapons_config": build.weapons_config,
         "implant_ids": build.implant_ids,
         "author": build.author.username,
         "views": build.views,
