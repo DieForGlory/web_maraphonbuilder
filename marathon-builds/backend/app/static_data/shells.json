@@ -1,0 +1,5 @@
+[
+  {"id": "destroyer", "name": "Destroyer", "role": "Tank", "base_heat": 120, "slots": ["head", "core", "arms", "legs", "implant_1", "implant_2"]},
+  {"id": "recon", "name": "Recon", "role": "Info", "base_heat": 90, "slots": ["head", "core", "arms", "legs", "implant_1", "implant_2"]},
+  {"id": "thief", "name": "Thief", "role": "Looting", "base_heat": 100, "slots": ["head", "core", "arms", "legs", "implant_1", "implant_2"]}
+]

@@ -1,0 +1,5 @@
+[
+  {"id": "imp_regen", "name": "Nanite Injector", "effect": "+10 Self-Repair Speed"},
+  {"id": "imp_scout", "name": "Ocular Uplink", "effect": "Enemy highlight duration +2s"},
+  {"id": "imp_sprint", "name": "Kinetic Dynamo", "effect": "Heat Cap +15"}
+]

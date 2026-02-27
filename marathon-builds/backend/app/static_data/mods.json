@@ -1,0 +1,7 @@
+[
+  {"id": "m_opt_reddot", "name": "Holo-Sight", "type": "optic", "effect": "ADS Speed +15%"},
+  {"id": "m_opt_acog", "name": "ACOG 4x", "type": "optic", "effect": "Zoom 4x, ADS -5%"},
+  {"id": "m_mag_ext", "name": "Extended Mag", "type": "magazine", "effect": "Ammo +10, Reload -10%"},
+  {"id": "m_muz_supp", "name": "Suppressor", "type": "muzzle", "effect": "Sound -80%, Range -15%"},
+  {"id": "m_bar_heavy", "name": "Heavy Barrel", "type": "barrel", "effect": "Damage +5%, Recoil -10%"}
+]
