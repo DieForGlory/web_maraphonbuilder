@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..models import Build, Like
 from .. import db
+from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
 
 builds_bp = Blueprint('builds', __name__)
 
@@ -47,7 +48,10 @@ def get_build(build_id):
     build = Build.query.get_or_404(build_id)
 
     if build.is_private:
-        pass
+        verify_jwt_in_request()
+        current_user_id = get_jwt_identity()
+        if current_user_id != build.user_id:
+            return jsonify({"error": "Access denied"}), 403
 
     build.views += 1
     db.session.commit()

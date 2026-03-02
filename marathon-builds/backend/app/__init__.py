@@ -5,25 +5,22 @@ from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 import os
 
+
 db = SQLAlchemy()
 bcrypt = Bcrypt()
-
 
 def create_app():
     app = Flask(__name__)
 
-    # Базовая конфигурация
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(app.instance_path, 'marathon.db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = 'super-secret-terminal-key'
 
-    # Настройки JWT для работы через API (без cookies/CSRF)
     app.config['JWT_TOKEN_LOCATION'] = ['headers']
     app.config['JWT_HEADER_NAME'] = 'Authorization'
     app.config['JWT_HEADER_TYPE'] = 'Bearer'
     app.config['JWT_COOKIE_CSRF_PROTECT'] = False
 
-    # Пути для медиа-контента
     app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/uploads/highlights')
     app.config['THUMBNAIL_FOLDER'] = os.path.join(app.root_path, 'static/uploads/thumbnails')
     app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
@@ -39,32 +36,30 @@ def create_app():
     bcrypt.init_app(app)
     jwt = JWTManager(app)
 
-    # Расширенная настройка CORS для туннелей
+    with app.app_context():
+        from . import models
+        db.create_all()
+
     CORS(app, resources={
         r"/api/*": {
             "origins": "*",
             "allow_headers": ["Content-Type", "Authorization"],
-            "methods": ["GET", "POST", "OPTIONS"]
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
         }
     })
 
-    # Диагностика JWT (вывод в консоль сервера)
     @jwt.unauthorized_loader
     def custom_unauthorized_response(_err):
-        print(f"[JWT DEBUG] Unauthorized: {_err}")
         return jsonify({"msg": _err}), 401
 
     @jwt.invalid_token_loader
     def custom_invalid_token_response(_err):
-        print(f"[JWT DEBUG] Invalid Token: {_err}")
         return jsonify({"msg": _err}), 422
 
     @jwt.expired_token_loader
     def custom_expired_token_response(jwt_header, jwt_payload):
-        print(f"[JWT DEBUG] Expired Token")
         return jsonify({"msg": "Token has expired"}), 401
 
-    # Раздача статики
     @app.route('/uploads/highlights/<filename>')
     def uploaded_file(filename):
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
@@ -73,15 +68,17 @@ def create_app():
     def uploaded_thumbnail(filename):
         return send_from_directory(app.config['THUMBNAIL_FOLDER'], filename)
 
-    # Blueprints
     from .routes.auth import auth_bp
     from .routes.game_data import game_data_bp
     from .routes.builds import builds_bp
     from .routes.community import community_bp
+    from .routes.admin import admin_bp
+    from .routes.factions import factions_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(game_data_bp, url_prefix='/api/data')
     app.register_blueprint(builds_bp, url_prefix='/api/builds')
     app.register_blueprint(community_bp, url_prefix='/api/community')
-
+    app.register_blueprint(admin_bp, url_prefix='/api/admin')
+    app.register_blueprint(factions_bp, url_prefix='/api/factions')
     return app

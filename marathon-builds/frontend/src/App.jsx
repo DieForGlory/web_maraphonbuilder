@@ -6,11 +6,14 @@ import Compare from './pages/Compare';
 import BuildDetails from './pages/BuildDetails';
 import Lore from './pages/Lore';
 import Highlights from './pages/Highlights';
-
+import AdminPanel from './pages/AdminPanel';
+import ProtectedRoute from './components/ProtectedRoute';
+import Factions from './pages/Factions';
+import FactionChat from './pages/FactionChat';
 
 function App() {
   return (
-    <div className="min-h-screen bg-m-black text-m-acid p-8 font-mono pb-24">
+    <div className="min-h-screen bg-m-black text-m-acid p-2 md:p-8 font-mono pb-24 overflow-x-hidden">
       <Header />
       <Routes>
         <Route path="/" element={<Builder />} />
@@ -19,6 +22,13 @@ function App() {
         <Route path="/db/:category" element={<CategoryDb />} />
         <Route path="/compare" element={<Compare />} />
         <Route path="/build" element={<BuildDetails />} />
+        <Route path="/factions" element={<Factions />} />
+        <Route path="/factions/:id" element={<FactionChat />} />
+        <Route path="/admin" element={
+          <ProtectedRoute allowedRoles={['архитектор']}>
+            <AdminPanel />
+          </ProtectedRoute>
+        } />
       </Routes>
     </div>
   );

@@ -2,14 +2,13 @@ import json
 from datetime import datetime
 from . import db
 
-
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
+    role = db.Column(db.String(20), default='бегун', nullable=False) # 'бегун', 'летописец', 'архитектор'
     builds = db.relationship('Build', backref='author', lazy=True)
     likes = db.relationship('Like', backref='user', lazy=True)
-
 
 class Build(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -18,7 +17,6 @@ class Build(db.Model):
     description = db.Column(db.Text, nullable=True)
     shell_id = db.Column(db.String(50), nullable=False)
 
-    # Хранение конфигурации оружия с модами: [{"id": "w_overrun", "mods": ["m_opt_reddot"]}]
     _weapons_config = db.Column('weapons_config', db.Text, default='[]')
     _implant_ids = db.Column('implant_ids', db.Text, default='[]')
 
@@ -43,7 +41,6 @@ class Build(db.Model):
     def implant_ids(self, value):
         self._implant_ids = json.dumps(value)
 
-
 class Like(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -51,7 +48,7 @@ class Like(db.Model):
 
 class Lore(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    category = db.Column(db.String(50), nullable=False) # 'UESC', 'Runners', 'Artifacts'
+    category = db.Column(db.String(50), nullable=False)
     title = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False)
     image_url = db.Column(db.String(255))
@@ -61,6 +58,6 @@ class Highlight(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     title = db.Column(db.String(100), nullable=False)
-    video_url = db.Column(db.String(255), nullable=False) # Ссылка на YouTube/Vimeo или локальный путь
+    video_url = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

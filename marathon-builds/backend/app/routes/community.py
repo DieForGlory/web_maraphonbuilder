@@ -1,7 +1,7 @@
 import os
-import cv2  # Библиотека OpenCV-python-headless
+import cv2
 from flask import Blueprint, jsonify, request, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from werkzeug.utils import secure_filename
 from ..models import db, Highlight, Lore, User
 
@@ -15,19 +15,14 @@ def allowed_file(filename):
 
 
 def generate_thumbnail_opencv(video_path, thumbnail_path):
-    """Генерация скриншота из видео без внешних утилит"""
     try:
         vidcap = cv2.VideoCapture(video_path)
-        # Смещаемся на 1000мс (1 секунда), чтобы не захватить черный кадр в начале
         vidcap.set(cv2.CAP_PROP_POS_MSEC, 1000)
-
         success, image = vidcap.read()
         if success:
-            # Записываем изображение на диск в формате JPG
             cv2.imwrite(thumbnail_path, image)
             vidcap.release()
             return True
-
         vidcap.release()
         return False
     except Exception as e:
@@ -52,22 +47,18 @@ def upload_highlight():
         filename = secure_filename(file.filename)
         user_id = get_jwt_identity()
 
-        # Формируем уникальные имена для видео и превью
         video_filename = f"user_{user_id}_{filename}"
         thumb_filename = f"thumb_{video_filename.rsplit('.', 1)[0]}.jpg"
 
         video_path = os.path.join(current_app.config['UPLOAD_FOLDER'], video_filename)
         thumb_path = os.path.join(current_app.config['THUMBNAIL_FOLDER'], thumb_filename)
 
-        # Сохранение видеофайла
         file.save(video_path)
 
-        # Генерация превью
         thumb_url = None
         if generate_thumbnail_opencv(video_path, thumb_path):
             thumb_url = f"/uploads/thumbnails/{thumb_filename}"
 
-        # Запись в базу данных
         new_h = Highlight(
             user_id=user_id,
             title=title,
@@ -110,3 +101,35 @@ def get_lore():
         "content": l.content,
         "image": l.image_url
     } for l in all_lore])
+
+
+@community_bp.route('/lore', methods=['POST'])
+@jwt_required()
+def create_lore():
+    claims = get_jwt()
+    if claims.get("role") not in ['летописец', 'архитектор']:
+        return jsonify({"error": "Недостаточно прав доступа"}), 403
+
+    data = request.get_json()
+    new_lore = Lore(
+        category=data.get('category'),
+        title=data.get('title'),
+        content=data.get('content'),
+        image_url=data.get('image_url')
+    )
+    db.session.add(new_lore)
+    db.session.commit()
+    return jsonify({"message": "Запись добавлена в архивы"}), 201
+
+
+@community_bp.route('/lore/<int:lore_id>', methods=['DELETE'])
+@jwt_required()
+def delete_lore(lore_id):
+    claims = get_jwt()
+    if claims.get("role") != 'архитектор':
+        return jsonify({"error": "Критическая операция доступна только архитектору"}), 403
+
+    lore_entry = Lore.query.get_or_404(lore_id)
+    db.session.delete(lore_entry)
+    db.session.commit()
+    return jsonify({"message": "Данные стерты"}), 200
