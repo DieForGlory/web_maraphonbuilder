@@ -37,7 +37,6 @@ def create_app():
     jwt = JWTManager(app)
 
     with app.app_context():
-        from . import models
         db.create_all()
 
     CORS(app, resources={

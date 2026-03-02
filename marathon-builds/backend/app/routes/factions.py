@@ -1,7 +1,7 @@
 import os
+import requests
+import json
 from flask import Blueprint, request, jsonify
-from google import genai
-from google.genai import types
 
 factions_bp = Blueprint('factions', __name__)
 
@@ -37,6 +37,7 @@ FACTION_DATA = {
     }
 }
 
+
 @factions_bp.route('/', methods=['GET'])
 def get_factions():
     return jsonify([{
@@ -44,6 +45,7 @@ def get_factions():
         "name": val["name"],
         "description": val["description"]
     } for key, val in FACTION_DATA.items()]), 200
+
 
 @factions_bp.route('/chat', methods=['POST'])
 def chat_with_faction():
@@ -56,21 +58,34 @@ def chat_with_faction():
     if not message:
         return jsonify({"error": "Пустое сообщение"}), 400
 
-    api_key = os.environ.get("GEMINI_API_KEY")
+    # Используем ключ OpenRouter из переменных окружения
+    api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
-        return jsonify({"error": "Критическая ошибка: отсутствует ключ связи"}), 500
+        return jsonify({"error": "Критическая ошибка: отсутствует ключ связи (OpenRouter)"}), 500
 
-    client = genai.Client(api_key=api_key)
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+
+    # Формируем запрос в стиле OpenAI/OpenRouter
+    payload = {
+        "model": "google/gemini-flash-1.5",
+        "messages": [
+            {"role": "system", "content": FACTION_DATA[faction_id]["prompt"]},
+            {"role": "user", "content": message}
+        ]
+    }
 
     try:
-        response = client.models.generate_content(
-            model='gemini-1.5-flash',
-            contents=message,
-            config=types.GenerateContentConfig(
-                system_instruction=FACTION_DATA[faction_id]["prompt"],
-            )
-        )
-        return jsonify({"reply": response.text}), 200
+        response = requests.post(url, headers=headers, data=json.dumps(payload), timeout=15)
+        response.raise_for_status()
+        result = response.json()
+
+        reply = result['choices'][0]['message']['content']
+        return jsonify({"reply": reply}), 200
+
     except Exception as e:
-        print(f"[AI ERROR] {e}")
-        return jsonify({"error": "Сбой модуля связи"}), 500
+        print(f"[OPENROUTER ERROR] {e}")
+        return jsonify({"error": "Сбой модуля связи через ретранслятор"}), 500
