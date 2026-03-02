@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 
-const API_BASE = "https://5mpxwrp0-5000.euw.devtunnels.ms";
+const API_BASE = "";
 
 export default function FactionChat() {
   const { id } = useParams();

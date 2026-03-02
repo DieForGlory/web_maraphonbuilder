@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-const API_BASE = "https://5mpxwrp0-5000.euw.devtunnels.ms"; // Заменить на локальный, если туннель выключен
+const API_BASE = "";
 
 export default function Factions() {
   const [factions, setFactions] = useState([]);

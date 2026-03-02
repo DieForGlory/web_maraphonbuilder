@@ -8,7 +8,7 @@ export default function Highlights() {
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  const API_BASE = "https://5mpxwrp0-5000.euw.devtunnels.ms";
+  const API_BASE = "";
 
   const loadVideos = () => {
     fetch(`${API_BASE}/api/community/highlights`)

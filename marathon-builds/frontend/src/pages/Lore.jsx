@@ -14,7 +14,7 @@ export default function Lore() {
   const canEdit = role === 'архитектор' || role === 'летописец';
   const canDelete = role === 'архитектор';
 
-  const API_BASE = "https://5mpxwrp0-5000.euw.devtunnels.ms";
+  const API_BASE = "";
 
   const fetchLore = useCallback(() => {
     setLoading(true);

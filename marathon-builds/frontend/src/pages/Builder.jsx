@@ -145,7 +145,7 @@ export default function Builder() {
     addWeapon, removeWeapon, addImplant, removeImplant, toggleMod
   } = useBuildStore();
 
-  const API_BASE = "https://5mpxwrp0-5000.euw.devtunnels.ms";
+  const API_BASE = "";
 
   useEffect(() => {
     const endpoints = ['shells', 'cores', 'weapons', 'implants', 'mods'];
